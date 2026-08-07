@@ -17,6 +17,11 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    # The default GITHUB_TOKEN is read-only on many repos/orgs - creating a
+    # Release needs write access explicitly granted here, since we can't rely
+    # on repo/org-level settings we may not control.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
