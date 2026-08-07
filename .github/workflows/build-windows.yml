@@ -1,0 +1,68 @@
+name: Build Windows EXE
+
+# PyInstaller can't cross-compile - a Windows .exe has to be built on a real
+# Windows machine. This runs on GitHub's windows-latest runner so the school
+# gets a real, tested .exe without anyone needing a Windows dev box.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build voting kiosk frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller==6.11.1
+
+      - name: Verify ballot data is present
+        run: |
+          if (-not (Test-Path "ballot.json")) { throw "ballot.json missing - run scripts/extract_symbols.py and commit its output" }
+          if (-not (Test-Path "candidates/symbols")) { throw "candidates/symbols missing" }
+
+      - name: Build C-LABS-EVM.exe
+        run: >
+          pyinstaller --onefile --name C-LABS-EVM --console
+          --add-data "frontend/dist;frontend/dist"
+          --add-data "candidates/symbols;candidates/symbols"
+          --add-data "ballot.json;."
+          --hidden-import uvicorn.loops.auto
+          --hidden-import uvicorn.loops.asyncio
+          --hidden-import uvicorn.protocols.http.auto
+          --hidden-import uvicorn.protocols.http.h11_impl
+          --hidden-import uvicorn.protocols.websockets.auto
+          --hidden-import uvicorn.lifespan.on
+          --hidden-import uvicorn.lifespan.off
+          main.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: C-LABS-EVM-windows
+          path: dist/C-LABS-EVM.exe
+          retention-days: 90
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/C-LABS-EVM.exe

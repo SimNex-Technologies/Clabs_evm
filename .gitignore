@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / frontend build
+frontend/node_modules/
+frontend/dist/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Election data - never belongs in the repo
+*.db
+*.db-wal
+*.db-shm
+
+# OS cruft
+.DS_Store

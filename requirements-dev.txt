@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# Dev/build only - not shipped in the .exe.
+Pillow==10.1.0      # scripts/extract_symbols.py
+pytest==8.3.4
+httpx==0.28.1       # FastAPI TestClient
+pyinstaller==6.11.1

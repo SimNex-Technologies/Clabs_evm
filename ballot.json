@@ -1,0 +1,165 @@
+{
+  "election": {
+    "title": "Bhashyam High School Elections",
+    "product": "C-LABS DIGITAL EVM",
+    "marquee": "<<<< C-LABS DIGITAL EVM >>>>   <<<< Bhashyam High School Elections >>>>"
+  },
+  "posts": [
+    {
+      "code": "HEAD_BOY",
+      "title": "HEAD BOY",
+      "candidates": [
+        {
+          "name": "Harshavardhan. A",
+          "symbol": "light bulb",
+          "symbol_file": "harshavardhan-a.png",
+          "ballot_order": 1
+        },
+        {
+          "name": "Pruthvi Teja. S",
+          "symbol": "torch",
+          "symbol_file": "pruthvi-teja-s.png",
+          "ballot_order": 2
+        },
+        {
+          "name": "Srivardhan. S",
+          "symbol": "fountain pen",
+          "symbol_file": "srivardhan-s.png",
+          "ballot_order": 3
+        },
+        {
+          "name": "Yashwanth. Ch",
+          "symbol": "star",
+          "symbol_file": "yashwanth-ch.png",
+          "ballot_order": 4
+        }
+      ]
+    },
+    {
+      "code": "HEAD_GIRL",
+      "title": "HEAD GIRL",
+      "candidates": [
+        {
+          "name": "Akshara. K",
+          "symbol": "candle",
+          "symbol_file": "akshara-k.png",
+          "ballot_order": 1
+        },
+        {
+          "name": "Nakshitha R.P",
+          "symbol": "diya",
+          "symbol_file": "nakshitha-r-p.png",
+          "ballot_order": 2
+        },
+        {
+          "name": "Nirali. Ch",
+          "symbol": "lantern",
+          "symbol_file": "nirali-ch.png",
+          "ballot_order": 3
+        },
+        {
+          "name": "Suharsha. G",
+          "symbol": "lighthouse",
+          "symbol_file": "suharsha-g.png",
+          "ballot_order": 4
+        },
+        {
+          "name": "Thanmaie. B",
+          "symbol": "table lamp and book",
+          "symbol_file": "thanmaie-b.png",
+          "ballot_order": 5
+        }
+      ]
+    },
+    {
+      "code": "SPORT",
+      "title": "SPORT CAPTAIN",
+      "candidates": [
+        {
+          "name": "Kushi Patel. Ch",
+          "symbol": "cricket bat",
+          "symbol_file": "kushi-patel-ch.png",
+          "ballot_order": 1
+        },
+        {
+          "name": "Satwik. K",
+          "symbol": "carrom board",
+          "symbol_file": "satwik-k.png",
+          "ballot_order": 2
+        },
+        {
+          "name": "Vignesh. M",
+          "symbol": "gold medal",
+          "symbol_file": "vignesh-m.png",
+          "ballot_order": 3
+        }
+      ]
+    },
+    {
+      "code": "DISCIPLINE",
+      "title": "DISCIPLINE RIDER",
+      "candidates": [
+        {
+          "name": "Anmisha. S",
+          "symbol": "wall clock",
+          "symbol_file": "anmisha-s.png",
+          "ballot_order": 1
+        },
+        {
+          "name": "Karthik. S",
+          "symbol": "weighing scales",
+          "symbol_file": "karthik-s.png",
+          "ballot_order": 2
+        },
+        {
+          "name": "Lasya. G",
+          "symbol": "microphone",
+          "symbol_file": "lasya-g.png",
+          "ballot_order": 3
+        },
+        {
+          "name": "Lokesh. P",
+          "symbol": "megaphone",
+          "symbol_file": "lokesh-p.png",
+          "ballot_order": 4
+        },
+        {
+          "name": "Thanmai. S",
+          "symbol": "whistle",
+          "symbol_file": "thanmai-s.png",
+          "ballot_order": 5
+        }
+      ]
+    },
+    {
+      "code": "ART",
+      "title": "ART & CULTURAL CAPTAIN",
+      "candidates": [
+        {
+          "name": "Ananda Rupa. B",
+          "symbol": "drum",
+          "symbol_file": "ananda-rupa-b.png",
+          "ballot_order": 1
+        },
+        {
+          "name": "Pooja. Ch",
+          "symbol": "nadaswaram and dholak",
+          "symbol_file": "pooja-ch.png",
+          "ballot_order": 2
+        },
+        {
+          "name": "Rishika Reddy. N",
+          "symbol": "cymbals",
+          "symbol_file": "rishika-reddy-n.png",
+          "ballot_order": 3
+        },
+        {
+          "name": "Vaishali. A",
+          "symbol": "veena",
+          "symbol_file": "vaishali-a.png",
+          "ballot_order": 4
+        }
+      ]
+    }
+  ]
+}

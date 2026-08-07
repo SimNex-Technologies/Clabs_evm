@@ -1,0 +1,11 @@
+# C-LABS Digital EVM - runtime dependencies
+# Kept deliberately small: fewer packages means a smaller .exe and fewer
+# PyInstaller hidden-import surprises on election day.
+#
+# Plain `uvicorn` rather than uvicorn[standard]: the standard extra pulls in
+# uvloop and httptools, which are native modules that complicate PyInstaller
+# bundling for no benefit on a single-voter kiosk.
+fastapi==0.115.6
+uvicorn==0.32.1
+pydantic==2.10.4
+openpyxl==3.1.5

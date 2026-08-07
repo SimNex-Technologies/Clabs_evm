@@ -1,0 +1,499 @@
+/* C-LABS Digital EVM - fixed civic light theme.
+   This runs full-screen on one dedicated school kiosk, not a general web page,
+   so the theme is deliberately locked rather than following OS dark/light -
+   consistent legibility under classroom lighting matters more than matching
+   whatever the Windows machine's system theme happens to be. */
+
+:root {
+  --navy: #10233f;
+  --navy-2: #17335a;
+  --ink: #10182a;
+  --paper: #f4f6f9;
+  --card: #ffffff;
+  --border: #d7dee8;
+  --muted: #5b6b82;
+  --blue: #1c5fd6;
+  --blue-dark: #124aad;
+  --green: #1b8a4a;
+  --green-dark: #146b39;
+  --red: #c22b2b;
+  --amber: #c9861f;
+  --shadow: 0 8px 24px rgba(16, 35, 63, 0.12);
+  --radius: 18px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- kiosk -- */
+
+.kiosk {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.marquee-bar {
+  background: var(--navy);
+  color: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 10px 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.marquee-bar span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 22s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.kiosk-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 20px;
+}
+
+.school-name {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  color: var(--navy);
+  margin: 0;
+}
+
+.election-name {
+  font-size: clamp(16px, 2.4vw, 22px);
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.big-button {
+  font-size: 26px;
+  font-weight: 700;
+  padding: 26px 64px;
+  border-radius: 999px;
+  border: none;
+  color: #fff;
+  background: var(--blue);
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+.big-button:active { transform: scale(0.97); }
+.big-button:hover { background: var(--blue-dark); }
+
+.big-button.green { background: var(--green); }
+.big-button.green:hover { background: var(--green-dark); }
+.big-button.red { background: var(--red); }
+.big-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.locked-icon {
+  font-size: 88px;
+  line-height: 1;
+}
+
+.status-line {
+  font-size: 20px;
+  color: var(--muted);
+  max-width: 640px;
+}
+
+/* progress + post header */
+
+.post-progress {
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.post-pill {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(20px, 3.2vw, 32px);
+  padding: 10px 36px;
+  border-radius: 999px;
+  margin: 4px 0 8px;
+}
+
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.candidate-tile {
+  background: var(--card);
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, border-color 0.1s ease;
+}
+.candidate-tile:hover { border-color: var(--blue); transform: translateY(-2px); }
+.candidate-tile:active { transform: scale(0.97); }
+.candidate-tile.selected { border-color: var(--green); background: #eefbf2; }
+
+.candidate-tile img {
+  width: 100%;
+  max-width: 140px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.candidate-name {
+  font-weight: 700;
+  font-size: 17px;
+  text-align: center;
+}
+
+.nota-tile {
+  border-style: dashed;
+  color: var(--muted);
+}
+.nota-tile .nota-mark {
+  font-size: 44px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+/* review */
+
+.review-list {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.review-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+}
+
+.review-row img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.review-row .info { flex: 1; }
+.review-row .post-title { font-size: 13px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.review-row .cand-name { font-size: 19px; font-weight: 700; }
+.review-row .cand-name.nota { color: var(--muted); font-style: italic; }
+
+.change-link {
+  border: none;
+  background: none;
+  color: var(--blue);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 8px 14px;
+}
+
+.thankyou-icon { font-size: 96px; }
+
+/* hidden admin-entry gesture target */
+.gesture-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------- admin -- */
+
+.admin {
+  flex: 1;
+  min-height: 100svh;
+  background: var(--paper);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.admin-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 10vh;
+}
+
+.admin-card h1 {
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+.admin-card p.hint {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 17px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-error {
+  color: var(--red);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.admin-dashboard {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.admin-topbar h1 { font-size: 24px; margin: 0; color: var(--navy); }
+
+.status-panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  align-items: center;
+}
+
+.status-light {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 20px;
+}
+.dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+.dot.locked { background: var(--red); box-shadow: 0 0 0 6px rgba(194,43,43,0.15); }
+.dot.unlocked { background: var(--green); box-shadow: 0 0 0 6px rgba(27,138,74,0.15); }
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+.stat .n { font-size: 26px; font-weight: 800; color: var(--navy); }
+.stat .label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.unlock-cta {
+  width: 100%;
+  padding: 30px;
+  font-size: 28px;
+  border-radius: var(--radius);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn {
+  border: 2px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+}
+.btn:hover { border-color: var(--blue); color: var(--blue); }
+.btn.danger { color: var(--red); border-color: rgba(194,43,43,0.4); }
+.btn.danger:hover { background: rgba(194,43,43,0.06); }
+.btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn.primary:hover { background: var(--blue-dark); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.panel h2 {
+  font-size: 17px;
+  margin: 0 0 16px;
+  color: var(--navy);
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16,24,42,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow);
+}
+
+/* ------------------------------------------------------------- results -- */
+
+.results-post {
+  margin-bottom: 28px;
+}
+.results-post:last-child { margin-bottom: 0; }
+
+.results-post h3 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.results-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.results-row {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) 1fr 40px;
+  align-items: center;
+  gap: 12px;
+}
+
+.rlabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rlabel .name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.winner-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 999px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+
+.rbar-track {
+  background: #eef1f6;
+  border-radius: 4px;
+  height: 20px;
+  overflow: hidden;
+}
+
+.rbar-fill {
+  height: 100%;
+  background: #c9c7c0; /* de-emphasis gray - the non-winning bars */
+  border-radius: 0 4px 4px 0;
+  min-width: 3px;
+  transition: width 0.2s ease;
+}
+.rbar-fill.winner {
+  background: var(--blue); /* the one bar the story is about */
+}
+
+.rvalue {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
