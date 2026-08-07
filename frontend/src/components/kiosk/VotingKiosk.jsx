@@ -1,7 +1,9 @@
+'use client';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api } from '../api.js';
-import { playBeep } from '../beep.js';
+import { useRouter } from 'next/navigation';
+import { api } from '../../lib/api.js';
+import { playBeep } from '../../lib/beep.js';
 import LockedScreen from './LockedScreen.jsx';
 import WelcomeScreen from './WelcomeScreen.jsx';
 import PostScreen from './PostScreen.jsx';
@@ -15,7 +17,7 @@ const THANKYOU_MS = 8000;
 const POLLING_PHASES = new Set(['loading', 'locked', 'welcome']);
 
 export default function VotingKiosk() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [phase, setPhase] = useState('loading');
   const [machineState, setMachineState] = useState(null);
   const [ballot, setBallot] = useState(null); // { ballot_id, posts }
@@ -111,14 +113,14 @@ export default function VotingKiosk() {
     tapTimes.current = [...tapTimes.current, now].filter((t) => now - t < 3000);
     if (tapTimes.current.length >= 5) {
       tapTimes.current = [];
-      navigate('/admin');
+      router.push('/admin');
     }
   }
 
   return (
     <div className="kiosk" onContextMenu={(e) => e.preventDefault()}>
       <div className="marquee-bar">
-        <span>{' '.repeat(4)}&lt;&lt;&lt;&lt; C-LABS DIGITAL EVM &gt;&gt;&gt;&gt;{' '.repeat(8)}&lt;&lt;&lt;&lt; BHASHYAM HIGH SCHOOL ELECTIONS &gt;&gt;&gt;&gt;{' '.repeat(8)}</span>
+        <span>{' '.repeat(4)}&lt;&lt;&lt;&lt; C-LABS DIGITAL EVM &gt;&gt;&gt;&gt;{' '.repeat(8)}&lt;&lt;&lt;&lt; BHASHYAM HIGH SCHOOL ELECTIONS &gt;&gt;&gt;&gt;{' '.repeat(8)}</span>
       </div>
 
       {(phase === 'loading' || phase === 'locked') && (
@@ -126,11 +128,16 @@ export default function VotingKiosk() {
       )}
 
       {phase === 'welcome' && (
-        <WelcomeScreen onStart={handleStartVoting} onGesture={handleSecretGesture} />
+        <WelcomeScreen
+          onStart={handleStartVoting}
+          onGesture={handleSecretGesture}
+          voterName={machineState?.current_voter_name}
+        />
       )}
 
       {phase === 'voting' && ballot && (
         <PostScreen
+          key={ballot.posts[postIndex].id}
           post={ballot.posts[postIndex]}
           postIndex={postIndex}
           totalPosts={ballot.posts.length}

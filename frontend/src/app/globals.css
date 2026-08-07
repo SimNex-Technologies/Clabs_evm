@@ -26,7 +26,7 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html, body {
   height: 100%;
 }
 
@@ -37,11 +37,13 @@ body {
   font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
-}
-
-#root {
   display: flex;
   flex-direction: column;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 button {
@@ -165,6 +167,7 @@ button {
 }
 
 .candidate-tile {
+  position: relative;
   background: var(--card);
   border: 3px solid var(--border);
   border-radius: var(--radius);
@@ -174,11 +177,53 @@ button {
   align-items: center;
   gap: 10px;
   box-shadow: var(--shadow);
-  transition: transform 0.08s ease, border-color 0.1s ease;
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease,
+              box-shadow 0.15s ease, opacity 0.15s ease;
 }
-.candidate-tile:hover { border-color: var(--blue); transform: translateY(-2px); }
-.candidate-tile:active { transform: scale(0.97); }
-.candidate-tile.selected { border-color: var(--green); background: #eefbf2; }
+.candidate-tile:hover {
+  border-color: var(--blue);
+  background: #eef4ff;
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 26px rgba(28, 95, 214, 0.28);
+}
+.candidate-tile:active { transform: scale(0.96); }
+
+.candidate-tile.selected {
+  border-color: var(--green);
+  background: #eefbf2;
+  transform: scale(1.04);
+  box-shadow: 0 0 0 5px rgba(27, 138, 74, 0.18), 0 14px 28px rgba(27, 138, 74, 0.3);
+}
+
+/* While one tile is confirming, the rest recede so the choice reads as final */
+.candidate-grid.has-selection .candidate-tile:not(.selected) {
+  opacity: 0.4;
+  transform: none;
+  box-shadow: var(--shadow);
+}
+
+.selected-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 900;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  animation: check-pop 0.2s ease;
+}
+
+@keyframes check-pop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 
 .candidate-tile img {
   width: 100%;

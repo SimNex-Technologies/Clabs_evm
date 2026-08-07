@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { api } from '../api.js';
+import { api } from '../../lib/api.js';
 
 export default function SetupScreen({ onAuthenticated }) {
   const [password, setPassword] = useState('');

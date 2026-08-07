@@ -1,6 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../api.js';
+import Link from 'next/link';
+import { api } from '../../lib/api.js';
 
 export default function LoginScreen({ onAuthenticated }) {
   const [password, setPassword] = useState('');
@@ -40,7 +42,7 @@ export default function LoginScreen({ onAuthenticated }) {
         </button>
       </form>
       <p style={{ marginTop: 16 }}>
-        <Link to="/" style={{ color: 'var(--muted)', fontSize: 14 }}>← Back to voting kiosk</Link>
+        <Link href="/" style={{ color: 'var(--muted)', fontSize: 14 }}>← Back to voting kiosk</Link>
       </p>
     </div>
   );

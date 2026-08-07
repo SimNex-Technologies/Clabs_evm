@@ -64,6 +64,20 @@ CREATE TABLE IF NOT EXISTS admin_config (
     salt_hex TEXT NOT NULL,
     hash_hex TEXT NOT NULL
 );
+
+-- Attendance is a paper-register equivalent: who was unlocked, when. It has
+-- NO foreign key to ballots/votes and is never joined against them anywhere
+-- in this codebase - that separation is what keeps the ballot secret. It
+-- exists only so the officer can be warned about a name they already
+-- unlocked for today; it is not, and must never become, a voter roll tied to
+-- ballot choices.
+CREATE TABLE IF NOT EXISTS attendance (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    name_normalized TEXT NOT NULL,
+    unlocked_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_attendance_name_normalized ON attendance(name_normalized);
 """
 
 
@@ -89,6 +103,7 @@ def init_db(conn, ballot_json_path):
     """Create tables if missing, seed posts/candidates from ballot.json if empty."""
     conn.executescript(SCHEMA)
     conn.execute("INSERT OR IGNORE INTO machine (id) VALUES (1)")
+    _migrate(conn)
 
     row = conn.execute("SELECT COUNT(*) AS n FROM posts").fetchone()
     if row["n"] == 0:
@@ -107,8 +122,34 @@ def init_db(conn, ballot_json_path):
                 )
 
 
+def _migrate(conn):
+    """Lightweight, idempotent column migration - no formal migration framework
+    exists yet, so this just adds columns that a pre-existing election.db from
+    an earlier version of the app won't have."""
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(machine)").fetchall()}
+    if "current_voter_name" not in cols:
+        conn.execute("ALTER TABLE machine ADD COLUMN current_voter_name TEXT")
+
+
 def get_machine(conn):
     return conn.execute("SELECT * FROM machine WHERE id = 1").fetchone()
+
+
+def _normalize_name(name):
+    """Trim, collapse internal whitespace, lowercase - for duplicate matching
+    only. The raw, as-typed name is what's stored and displayed."""
+    return " ".join(name.strip().lower().split())
+
+
+def find_attendance_by_name(conn, name):
+    """Returns the most recent attendance row with a matching normalized name,
+    or None. Used only to warn the officer - never joined against ballots."""
+    normalized = _normalize_name(name)
+    return conn.execute(
+        "SELECT * FROM attendance WHERE name_normalized = ? "
+        "ORDER BY unlocked_at DESC LIMIT 1",
+        (normalized,),
+    ).fetchone()
 
 
 def get_ballot_structure(conn):
@@ -134,8 +175,21 @@ def get_ballot_structure(conn):
     return result
 
 
-def unlock_for_next_student(conn, is_test=False):
-    """Officer action: open exactly one new ballot session. Returns the ballot id."""
+def unlock_for_next_student(conn, voter_name, is_test=False):
+    """Officer action: open exactly one new ballot session. Returns the ballot id.
+
+    `voter_name` is logged to the `attendance` table (see its schema comment
+    for why that table is never joined against ballots/votes) and stamped on
+    `machine.current_voter_name` for the kiosk's welcome-screen greeting. It is
+    NOT written to `ballots` or `votes` - cast_ballot()/force_lock() clear
+    `current_voter_name` back to NULL in the same transaction that locks the
+    machine, so there is never a moment where a completed vote and a voter
+    name are both attached to the same row.
+
+    Duplicate-name checking happens one layer up (app.py), which calls
+    find_attendance_by_name() first and only calls this function once the
+    officer has confirmed (or there was no duplicate).
+    """
     conn.execute("BEGIN IMMEDIATE")
     try:
         machine = get_machine(conn)
@@ -147,14 +201,20 @@ def unlock_for_next_student(conn, is_test=False):
         next_serial = conn.execute(
             "SELECT COALESCE(MAX(serial), 0) + 1 AS n FROM ballots"
         ).fetchone()["n"]
+        now = _now()
         conn.execute(
             "INSERT INTO ballots (id, serial, opened_at, state, is_test) "
             "VALUES (?, ?, ?, 'OPEN', ?)",
-            (ballot_id, next_serial, _now(), 1 if is_test else 0),
+            (ballot_id, next_serial, now, 1 if is_test else 0),
         )
         conn.execute(
-            "UPDATE machine SET status='UNLOCKED', active_ballot_id=? WHERE id=1",
-            (ballot_id,),
+            "INSERT INTO attendance (name, name_normalized, unlocked_at) VALUES (?, ?, ?)",
+            (voter_name, _normalize_name(voter_name), now),
+        )
+        conn.execute(
+            "UPDATE machine SET status='UNLOCKED', active_ballot_id=?, "
+            "current_voter_name=? WHERE id=1",
+            (ballot_id, voter_name),
         )
         conn.execute("COMMIT")
         return ballot_id
@@ -174,7 +234,8 @@ def force_lock(conn):
                 (machine["active_ballot_id"],),
             )
         conn.execute(
-            "UPDATE machine SET status='LOCKED', active_ballot_id=NULL WHERE id=1"
+            "UPDATE machine SET status='LOCKED', active_ballot_id=NULL, "
+            "current_voter_name=NULL WHERE id=1"
         )
         conn.execute("COMMIT")
     except Exception:
@@ -227,7 +288,8 @@ def cast_ballot(conn, ballot_id, selections):
             (now, ballot_id),
         )
         conn.execute(
-            "UPDATE machine SET status='LOCKED', active_ballot_id=NULL WHERE id=1"
+            "UPDATE machine SET status='LOCKED', active_ballot_id=NULL, "
+            "current_voter_name=NULL WHERE id=1"
         )
         conn.execute("COMMIT")
         return ballot["serial"]
@@ -302,14 +364,17 @@ def tally(conn, include_test=False):
 
 
 def reset_election(conn):
-    """Wipe all ballots/votes and reset machine state. Caller must back up first."""
+    """Wipe all ballots/votes/attendance and reset machine state. Caller must
+    back up first."""
     conn.execute("BEGIN IMMEDIATE")
     try:
         conn.execute("DELETE FROM votes")
         conn.execute("DELETE FROM ballots")
+        conn.execute("DELETE FROM attendance")
         conn.execute(
             "UPDATE machine SET status='LOCKED', polling='NOT_STARTED', "
-            "active_ballot_id=NULL, poll_start=NULL, poll_end=NULL WHERE id=1"
+            "active_ballot_id=NULL, poll_start=NULL, poll_end=NULL, "
+            "current_voter_name=NULL WHERE id=1"
         )
         conn.execute("COMMIT")
     except Exception:

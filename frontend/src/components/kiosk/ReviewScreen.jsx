@@ -1,3 +1,5 @@
+'use client';
+
 export default function ReviewScreen({ posts, selections, onChange, onCast }) {
   return (
     <div className="kiosk-body">

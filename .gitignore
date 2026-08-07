@@ -6,12 +6,19 @@ __pycache__/
 
 # Node / frontend build
 frontend/node_modules/
-frontend/dist/
+frontend/.next/
 
 # PyInstaller
 build/
 dist/
 *.spec
+
+# Windows packaging (built by CI, not committed)
+node-runtime/
+node-extracted/
+node.zip
+release/
+C-LABS-EVM-windows.zip
 
 # Election data - never belongs in the repo
 *.db
@@ -20,3 +27,6 @@ dist/
 
 # OS cruft
 .DS_Store
+
+# Local tool settings - machine-specific, not project source
+.claude/

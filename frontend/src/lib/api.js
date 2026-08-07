@@ -37,11 +37,11 @@ export const api = {
   adminLogin: (password) =>
     request('/api/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
 
-  adminUnlock: (token, isTest) =>
+  adminUnlock: (token, voterName, isTest, override) =>
     request('/api/admin/unlock', {
       method: 'POST',
       headers: authHeader(token),
-      body: JSON.stringify({ is_test: !!isTest }),
+      body: JSON.stringify({ voter_name: voterName, is_test: !!isTest, override: !!override }),
     }),
   adminLock: (token) =>
     request('/api/admin/lock', { method: 'POST', headers: authHeader(token) }),

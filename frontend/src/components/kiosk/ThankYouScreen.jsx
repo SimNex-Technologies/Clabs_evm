@@ -1,3 +1,5 @@
+'use client';
+
 export default function ThankYouScreen({ serial }) {
   return (
     <div className="kiosk-body">

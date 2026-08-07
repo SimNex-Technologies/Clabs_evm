@@ -1,8 +1,13 @@
-name: Build Windows EXE
+name: Build Windows Package
 
 # PyInstaller can't cross-compile - a Windows .exe has to be built on a real
 # Windows machine. This runs on GitHub's windows-latest runner so the school
-# gets a real, tested .exe without anyone needing a Windows dev box.
+# gets a real, tested package without anyone needing a Windows dev box.
+#
+# The release is a folder (zipped), not a single .exe: the FastAPI backend
+# (PyInstaller onefile) and the Next.js frontend (standalone Node server) are
+# two separate processes now, so a portable Node.js runtime and a launcher
+# script ship alongside the backend .exe. See packaging/Start-Voting.bat.
 on:
   push:
     branches: [main]
@@ -19,11 +24,17 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build voting kiosk frontend
+      - name: Build Next.js frontend (standalone output)
         working-directory: frontend
         run: |
           npm ci
           npm run build
+
+      - name: Assemble standalone frontend (static + public assets)
+        working-directory: frontend
+        run: |
+          Copy-Item -Recurse -Force .next/static .next/standalone/.next/static
+          if (Test-Path public) { Copy-Item -Recurse -Force public .next/standalone/public }
 
       - uses: actions/setup-python@v5
         with:
@@ -40,10 +51,9 @@ jobs:
           if (-not (Test-Path "ballot.json")) { throw "ballot.json missing - run scripts/extract_symbols.py and commit its output" }
           if (-not (Test-Path "candidates/symbols")) { throw "candidates/symbols missing" }
 
-      - name: Build C-LABS-EVM.exe
+      - name: Build C-LABS-EVM-Backend.exe
         run: >
-          pyinstaller --onefile --name C-LABS-EVM --console
-          --add-data "frontend/dist;frontend/dist"
+          pyinstaller --onefile --name C-LABS-EVM-Backend --console
           --add-data "candidates/symbols;candidates/symbols"
           --add-data "ballot.json;."
           --hidden-import uvicorn.loops.auto
@@ -55,14 +65,40 @@ jobs:
           --hidden-import uvicorn.lifespan.off
           main.py
 
+      - name: Download portable Node.js runtime (win-x64)
+        shell: pwsh
+        run: |
+          $shasums = (Invoke-WebRequest -UseBasicParsing https://nodejs.org/dist/latest-v20.x/SHASUMS256.txt).Content
+          $line = ($shasums -split "`n") | Where-Object { $_ -match 'win-x64\.zip$' } | Select-Object -First 1
+          $filename = ($line -split '\s+')[1].Trim()
+          Write-Host "Downloading $filename"
+          Invoke-WebRequest -UseBasicParsing "https://nodejs.org/dist/latest-v20.x/$filename" -OutFile node.zip
+          Expand-Archive node.zip -DestinationPath node-extracted
+          $extractedDir = Get-ChildItem -Path node-extracted -Directory | Select-Object -First 1
+          Move-Item $extractedDir.FullName node-runtime
+
+      - name: Assemble release package
+        shell: pwsh
+        run: |
+          $out = "release/C-LABS-EVM"
+          New-Item -ItemType Directory -Force -Path "$out/Backend" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$out/Frontend" | Out-Null
+
+          Copy-Item "dist/C-LABS-EVM-Backend.exe" "$out/Backend/"
+          Copy-Item -Recurse "frontend/.next/standalone/*" "$out/Frontend/"
+          Copy-Item -Recurse "node-runtime" "$out/node"
+          Copy-Item "packaging/Start-Voting.bat" "$out/"
+
+          Compress-Archive -Path $out -DestinationPath "C-LABS-EVM-windows.zip"
+
       - uses: actions/upload-artifact@v4
         with:
           name: C-LABS-EVM-windows
-          path: dist/C-LABS-EVM.exe
+          path: C-LABS-EVM-windows.zip
           retention-days: 90
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/C-LABS-EVM.exe
+          files: C-LABS-EVM-windows.zip

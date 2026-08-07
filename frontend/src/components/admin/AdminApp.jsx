@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api } from '../../lib/api.js';
 import SetupScreen from './SetupScreen.jsx';
 import LoginScreen from './LoginScreen.jsx';
 import Dashboard from './Dashboard.jsx';
@@ -8,9 +10,10 @@ const TOKEN_KEY = 'clabs_evm_admin_token';
 
 export default function AdminApp() {
   const [adminConfigured, setAdminConfigured] = useState(null); // null = loading
-  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
+    setToken(sessionStorage.getItem(TOKEN_KEY));
     api.getState().then((s) => setAdminConfigured(s.admin_configured)).catch(() => {});
   }, []);
 

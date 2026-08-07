@@ -1,4 +1,10 @@
-"""C-LABS Digital EVM - FastAPI application.
+"""C-LABS Digital EVM - FastAPI backend.
+
+This process is a pure JSON API plus the /symbols image files - it serves no
+HTML. The Next.js frontend (frontend/) owns the UI entirely and reaches this
+API through its own server-side rewrites, so from the browser's point of view
+everything is same-origin against the Next.js server; no CORS is configured
+here because the browser never talks to this process directly.
 
 Route map:
   GET  /api/state                 public   - machine/polling status, ballot count
@@ -19,20 +25,17 @@ Route map:
   matching the server-held ballot/machine state - see db.py's cast_ballot.
 """
 
-import sys
 import threading
-import webbrowser
 from typing import Dict, Optional
 
 import uvicorn
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import config, db, security, storage
 
-app = FastAPI(title="C-LABS Digital EVM")
+app = FastAPI(title="C-LABS Digital EVM Backend")
 
 # FastAPI runs sync route functions in a threadpool - different requests can
 # land on different threads, and sqlite3 connections are not safe to share
@@ -72,7 +75,9 @@ class LoginRequest(BaseModel):
 
 
 class UnlockRequest(BaseModel):
+    voter_name: str
     is_test: bool = False
+    override: bool = False  # true once the officer has confirmed past a duplicate warning
 
 
 class PollingRequest(BaseModel):
@@ -117,6 +122,11 @@ def api_state():
         "test_mode": bool(m["test_mode"]),
         "ballot_count": db.ballot_count(conn),
         "admin_configured": security.is_configured(conn),
+        # The currently-unlocked student's name, for the kiosk's welcome-screen
+        # greeting. Cleared back to null the instant the ballot is cast or the
+        # machine is force-locked - see db.py's attendance table comment for
+        # why this is never linked to the vote itself.
+        "current_voter_name": m["current_voter_name"],
     }
 
 
@@ -197,8 +207,22 @@ def api_admin_login(body: LoginRequest):
 @app.post("/api/admin/unlock")
 def api_admin_unlock(body: UnlockRequest, authorization: Optional[str] = Header(None)):
     require_admin(authorization)
+    voter_name = body.voter_name.strip()
+    if not voter_name:
+        raise HTTPException(400, "Enter the student's name before unlocking.")
+
     conn = get_conn()
-    ballot_id = db.unlock_for_next_student(conn, is_test=body.is_test)
+
+    if not body.override:
+        existing = db.find_attendance_by_name(conn, voter_name)
+        if existing is not None:
+            raise HTTPException(409, detail={
+                "duplicate": True,
+                "name": existing["name"],
+                "unlocked_at": existing["unlocked_at"],
+            })
+
+    ballot_id = db.unlock_for_next_student(conn, voter_name, is_test=body.is_test)
     return {"ballot_id": ballot_id}
 
 
@@ -266,39 +290,29 @@ def api_admin_reset(body: ResetRequest, authorization: Optional[str] = Header(No
     return {"ok": True}
 
 
-# ------------------------------------------------------------- static ui --
+# --------------------------------------------------------- symbol images --
 
 if config.SYMBOLS_DIR.exists():
     app.mount("/symbols", StaticFiles(directory=str(config.SYMBOLS_DIR)), name="symbols")
 
-if config.FRONTEND_DIST.exists():
-    app.mount("/assets", StaticFiles(directory=str(config.FRONTEND_DIST / "assets")),
-              name="assets")
-
-    @app.get("/{full_path:path}")
-    def spa_catch_all(full_path: str):
-        # Client-side routes (/, /admin, deep links) all serve the same SPA shell.
-        index = config.FRONTEND_DIST / "index.html"
-        return FileResponse(index)
-
-
-def _open_browser_when_ready():
-    import time
-    import urllib.request
-
-    for _ in range(100):
-        try:
-            urllib.request.urlopen("http://%s:%d/api/state" % (config.HOST, config.PORT),
-                                    timeout=0.5)
-            break
-        except Exception:
-            time.sleep(0.1)
-    webbrowser.open("http://%s:%d/" % (config.HOST, config.PORT))
-
 
 def main():
-    if "--no-browser" not in sys.argv:
-        threading.Thread(target=_open_browser_when_ready, daemon=True).start()
+    # No browser-opening here: with two processes now (this API + the Next.js
+    # frontend), the launcher script is what waits for both to come up and
+    # opens the browser at the frontend's URL - see run.command/run.bat and
+    # the packaged Start-Voting.bat (which prints its own, more prominent
+    # version of these URLs once the frontend is also up).
+    ips = config.lan_ips()
+    print("=" * 64)
+    print("C-LABS Digital EVM - backend starting")
+    print("  Voting kiosk (this laptop): http://127.0.0.1:%d/" % config.FRONTEND_PORT)
+    print("  Admin console - on the Admin laptop, same WiFi/hotspot, try:")
+    for ip in ips:
+        print("    http://%s:%d/admin" % (ip, config.FRONTEND_PORT))
+    if len(ips) > 1:
+        print("  (More than one address found - if the first doesn't load,")
+        print("   try the others. A VPN on this laptop can make one of them wrong.)")
+    print("=" * 64)
     uvicorn.run(app, host=config.HOST, port=config.PORT, log_level="info")
 
 

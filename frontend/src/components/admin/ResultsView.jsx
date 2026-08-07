@@ -1,3 +1,5 @@
+'use client';
+
 // Per-post horizontal bar chart: an "emphasis" chart (one hue + gray) rather
 // than a categorical palette, because there's one job here - who's winning -
 // not telling N distinct series apart. Winner gets the accent bar AND a

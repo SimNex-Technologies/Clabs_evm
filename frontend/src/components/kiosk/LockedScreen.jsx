@@ -1,3 +1,5 @@
+'use client';
+
 export default function LockedScreen({ errorMessage, onGesture }) {
   return (
     <div className="kiosk-body" style={{ position: 'relative' }}>

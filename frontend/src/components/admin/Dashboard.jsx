@@ -1,6 +1,8 @@
+'use client';
+
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../api.js';
+import Link from 'next/link';
+import { api } from '../../lib/api.js';
 import ResultsView from './ResultsView.jsx';
 
 const POLL_MS = 2000;
@@ -14,6 +16,8 @@ export default function Dashboard({ token, onLogout }) {
   const [showForce, setShowForce] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [resetConfirm, setResetConfirm] = useState('');
+  const [voterName, setVoterName] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(null); // { name, unlocked_at }
 
   const refresh = useCallback(async () => {
     try {
@@ -47,9 +51,28 @@ export default function Dashboard({ token, onLogout }) {
     }
   }
 
-  const handleUnlock = () => guarded(async () => {
-    await api.adminUnlock(token, state.test_mode);
-  });
+  async function doUnlock(override) {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await api.adminUnlock(token, voterName, state.test_mode, override);
+      setVoterName('');
+      setDuplicateWarning(null);
+      await refresh();
+    } catch (e) {
+      if (e.status === 401) return onLogout();
+      if (e.status === 409 && e.body?.detail?.duplicate) {
+        setDuplicateWarning({ name: e.body.detail.name, unlockedAt: e.body.detail.unlocked_at });
+        return;
+      }
+      setMessage({ type: 'error', text: e.body?.detail || e.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const handleUnlock = () => doUnlock(false);
+  const handleConfirmDuplicateUnlock = () => doUnlock(true);
 
   const handleLock = () => guarded(async () => {
     await api.adminLock(token);
@@ -111,7 +134,7 @@ export default function Dashboard({ token, onLogout }) {
       <div className="admin-topbar">
         <h1>C-LABS Digital EVM — Officer Console</h1>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Link to="/" className="btn">Voting Kiosk</Link>
+          <Link href="/" className="btn">Voting Kiosk</Link>
           <button className="btn" onClick={onLogout}>Log Out</button>
         </div>
       </div>
@@ -119,7 +142,7 @@ export default function Dashboard({ token, onLogout }) {
       <div className="status-panel">
         <div className="status-light">
           <span className={`dot ${state.status === 'LOCKED' ? 'locked' : 'unlocked'}`} />
-          {state.status === 'LOCKED' ? 'LOCKED' : 'UNLOCKED'}
+          {state.status === 'LOCKED' ? 'VOTED' : 'VOTE'}
         </div>
         <div className="stat">
           <span className="n">{state.ballot_count}</span>
@@ -143,15 +166,46 @@ export default function Dashboard({ token, onLogout }) {
         </div>
       )}
 
-      <button
-        className="big-button unlock-cta"
-        onClick={handleUnlock}
-        disabled={busy || state.status === 'UNLOCKED' || state.polling !== 'OPEN'}
-      >
-        {state.status === 'UNLOCKED' ? 'MACHINE READY FOR STUDENT' : 'UNLOCK FOR NEXT STUDENT'}
-      </button>
-      {state.polling !== 'OPEN' && (
-        <p className="status-line">Open polling below before unlocking for students.</p>
+      <div className="panel">
+        <h2>Unlock For Next Student</h2>
+        <input
+          className="admin-input"
+          placeholder="Student's full name"
+          value={voterName}
+          onChange={(e) => setVoterName(e.target.value)}
+          disabled={state.status === 'UNLOCKED'}
+        />
+        <button
+          className="big-button unlock-cta"
+          onClick={handleUnlock}
+          disabled={busy || state.status === 'UNLOCKED' || state.polling !== 'OPEN' || !voterName.trim()}
+        >
+          {state.status === 'UNLOCKED' ? 'MACHINE READY FOR STUDENT' : 'UNLOCK FOR NEXT STUDENT'}
+        </button>
+        {state.status === 'UNLOCKED' && state.current_voter_name && (
+          <p className="status-line">Currently voting: {state.current_voter_name}</p>
+        )}
+        {state.polling !== 'OPEN' && (
+          <p className="status-line">Open polling below before unlocking for students.</p>
+        )}
+      </div>
+
+      {duplicateWarning && (
+        <div className="modal-backdrop" onClick={() => setDuplicateWarning(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>⚠️ Possible Duplicate</h2>
+            <p className="hint">
+              <strong>{duplicateWarning.name}</strong> was already unlocked today at{' '}
+              {new Date(duplicateWarning.unlockedAt).toLocaleTimeString()}. Unlock again anyway?
+            </p>
+            <div className="action-row">
+              <button className="btn danger" onClick={handleConfirmDuplicateUnlock} disabled={busy}>
+                Unlock Anyway
+              </button>
+              <button className="btn" onClick={() => setDuplicateWarning(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="panel">
