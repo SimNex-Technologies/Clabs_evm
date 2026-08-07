@@ -10,6 +10,53 @@ REM the officer console remotely at the address printed below - nothing
 REM needs installing on that second laptop, it just needs a browser.
 cd /d "%~dp0"
 
+REM --- Guard 1: running from inside the .zip -------------------------------
+REM Double-clicking a file inside a zip makes Windows copy that ONE file to a
+REM Temp folder and run it there, without Backend\, Frontend\ or node\. The
+REM result is a half-started system that looks like it worked, so catch it.
+echo %~dp0 | findstr /I "\\AppData\\Local\\Temp\\" >nul
+if %errorlevel%==0 (
+    echo.
+    echo  ============================================================
+    echo   STOP - this is running from inside the ZIP file.
+    echo  ============================================================
+    echo.
+    echo   Windows is running this from a temporary folder, so the rest
+    echo   of the program is missing and voting will NOT work.
+    echo.
+    echo   Fix it like this:
+    echo     1. Close this window.
+    echo     2. Find the downloaded .zip file.
+    echo     3. Right-click it and choose "Extract All...".
+    echo     4. Open the extracted C-LABS-EVM folder.
+    echo     5. Double-click Start-Voting.bat in THAT folder.
+    echo.
+    pause
+    exit /b 1
+)
+
+REM --- Guard 2: the pieces we need are actually beside us ------------------
+set MISSING=
+if not exist "Backend\C-LABS-EVM-Backend.exe" set MISSING=%MISSING% Backend\C-LABS-EVM-Backend.exe
+if not exist "Frontend\server.js"            set MISSING=%MISSING% Frontend\server.js
+if not exist "node\node.exe"                 set MISSING=%MISSING% node\node.exe
+if not "%MISSING%"=="" (
+    echo.
+    echo  ============================================================
+    echo   STOP - part of the program is missing.
+    echo  ============================================================
+    echo.
+    echo   Could not find:%MISSING%
+    echo.
+    echo   Start-Voting.bat must sit in the same folder as the
+    echo   Backend, Frontend and node folders. Extract the whole .zip
+    echo   again and keep all of them together, then run this file
+    echo   from the extracted folder.
+    echo.
+    pause
+    exit /b 1
+)
+
 echo Starting C-LABS Digital EVM backend...
 start "C-LABS EVM Backend - DO NOT CLOSE" /min Backend\C-LABS-EVM-Backend.exe
 

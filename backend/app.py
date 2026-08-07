@@ -302,17 +302,32 @@ def main():
     # opens the browser at the frontend's URL - see run.command/run.bat and
     # the packaged Start-Voting.bat (which prints its own, more prominent
     # version of these URLs once the frontend is also up).
+    # The addresses below are served by the Next.js frontend, which is a
+    # SEPARATE process. Printing them unconditionally was actively misleading:
+    # someone who launched this .exe on its own saw working-looking URLs that
+    # nothing was serving, and concluded the app was broken. So lead with what
+    # this window actually is, and how to start the whole system.
     ips = config.lan_ips()
-    print("=" * 64)
-    print("C-LABS Digital EVM - backend starting")
-    print("  Voting kiosk (this laptop): http://127.0.0.1:%d/" % config.FRONTEND_PORT)
-    print("  Admin console - on the Admin laptop, same WiFi/hotspot, try:")
+    print("=" * 68)
+    print("  C-LABS Digital EVM - BACKEND (election data + API)")
+    print("=" * 68)
+    print("  This window is only HALF of the program. By itself it does NOT")
+    print("  show the voting screen, and the addresses below will not open.")
+    print("")
+    print("  If you started this by double-clicking the .exe, close it and")
+    print("  double-click  Start-Voting.bat  instead - that starts both")
+    print("  halves together.")
+    print("-" * 68)
+    print("  Once BOTH halves are running:")
+    print("    Voting screen (this laptop):  http://127.0.0.1:%d/"
+          % config.FRONTEND_PORT)
+    print("    Officer console (Admin laptop, same WiFi/hotspot):")
     for ip in ips:
-        print("    http://%s:%d/admin" % (ip, config.FRONTEND_PORT))
+        print("      http://%s:%d/admin" % (ip, config.FRONTEND_PORT))
     if len(ips) > 1:
-        print("  (More than one address found - if the first doesn't load,")
-        print("   try the others. A VPN on this laptop can make one of them wrong.)")
-    print("=" * 64)
+        print("    (Several addresses found - if the first does not load, try")
+        print("     the next. A VPN on this laptop can make one of them wrong.)")
+    print("=" * 68)
     uvicorn.run(app, host=config.HOST, port=config.PORT, log_level="info")
 
 
